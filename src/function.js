@@ -3,13 +3,16 @@ const fs = require('fs');
 const path = require('path');
 const marked = require('marked');
 const { JSDOM } = require('jsdom');
+const axios = require ('axios');
 
 const isAbsolutePath = (route) => path.isAbsolute(route); //boolean
 const convertAbsolute = (route) => (isAbsolutePath(route) ? route : path.resolve(route));
-const existingPath = (route) => fs.existsSync(route);
+const existingPath = (route) => {
+    return fs.existsSync(route);
+  };
 const extentionFilePath = (route) => path.extname(route); // 
 
-const nameExt = (route) => {
+const validateMdExtension = (route) => {
     const validateExtentionFile = [".md", ".mkd", ".mdwn", ".mdown", ".mdtxt", ".mdtext", ".markdown", ".text"];
     const fileExtention = extentionFilePath(route);
 
@@ -28,18 +31,24 @@ const readFile = (route) => {
   })
 }
 
+// axios.get('')
+//   .then(response => console.log(response.data))
+//   .catch(error => console.error(error))
+
 const extractLinks = (data) => {
     objectsArr = []
     const html = marked.parse(data)
     const dom = new JSDOM(html);
     const anchorEtqA = dom.window.document.querySelectorAll("a")
-    //console.log(anchorEtqA.length);
+    console.log(anchorEtqA.length);
     anchorEtqA.forEach((anchor) => {
         objectsArr.push(
         {
           href: anchor.href,
           text: anchor.textContent,
           file: '',
+          stats: anchor.stats,
+          ok: anchor.ok,
         }
       )
     })
@@ -47,10 +56,31 @@ const extractLinks = (data) => {
     return objectsArr
 }
 
-function validarLinks(arrayObjs) {
-    const resultMap = arratObjs.map((obj)=>obj.algo)
-    console.log(resultMap)
-    // revisar el Promise.all
+const validateLinksOld = (data) => {
+    const checkArray = data.map((i) => {
+        const newObj = { ...i };
+        return axios
+          .get((newObj.href)
+          .then((res) => {
+            newObj.status = res.status;
+            newObj.msg = res.statusText;
+            return newObj; //return el objeto ya modificado
+            })
+            .catch((error) => {
+                newObj.status = !error.response ? 404 : error.response.status;
+                newObj.msg = 'Fail';
+                return newObj;
+          }))
+    })
+    console.log(validateLinks, 'links?');
+
+    return Promise.all(checkArray);
+}
+
+const validateLinks = (link) => {
+    axios.get(link)
+  .then(response => console.log(response.data))
+  .catch(error => console.error(error))
 }
 
 module.exports = {
@@ -58,6 +88,7 @@ module.exports = {
     convertAbsolute,
     existingPath,
     extentionFilePath,
-    nameExt,
-    readFile
+    validateMdExtension,
+    readFile,
+    validateLinks
 };
