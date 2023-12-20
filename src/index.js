@@ -1,5 +1,5 @@
 // llamado de las funciones del archivo function
-const { convertAbsolute, existingPath, validateMdExtension, readFile, validateLinks } = require("./function.js");
+const { convertAbsolute, existingPath, validateMdExtension, readFile, validateLinks, validateFormatLink } = require("./function.js");
 const fs = require('fs');
 
 function mdLinks(path, validate) {
@@ -13,11 +13,21 @@ function mdLinks(path, validate) {
       // validar si es un archivo md
       if(validateMdExtension(path) === true){
         readFile(convertedPath)
-        .then((res) => resolve(res))
+        .then((fileRed) => {
+          // retorna un boolean
+          const links = validateFormatLink(fileRed);
+          
+          if(validate) {
+            validateLinks(links).then((res) => resolve(res));
+          } else {
+          resolve(fileRed)
+          }
+        })
         .catch((err)=> reject(err))
       } else {
         console.log('La ruta no es valida')
       }
+      
 
     } else {
       console.log('La ruta no existe')
