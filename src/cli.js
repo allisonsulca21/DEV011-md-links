@@ -1,4 +1,5 @@
 const { mdLinks } = require('./index')
+const process = require('process')
 
 
 // mdLinks('C:/Users/Sulca/DEV011-md-links/docs/04-milestone.md')

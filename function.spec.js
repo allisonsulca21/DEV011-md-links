@@ -1,13 +1,12 @@
 jest.mock('', () => jest.fn());
+//const { axios } = require("axios");
+const axios = require('axios');
 
-// const {
-//     convertAbsolute
-// } = require('./index')
 const {
     convertAbsolute,
     existingPath,
     extentionFilePath,
-    extractLinks
+    validateLinks,
 } = require('./src/function')
 
 // Test 1
@@ -43,21 +42,55 @@ describe('nameExt', () => {
 })
 
 // Test 4
-describe('extractLinks', () => {
-    const anchor = {
-        href: 'https://developer.mozilla.org/es/docs/Web/JavaScript/Guide/Regular_expressions',
-        text: 'Patrones para coincidencia de caracteres con expresiones regulares - mozilla.org',
-        file: ''
-    };
-    const linksInfo = {
-       href: '',
-       text: '',
-       file: '',
-    };
-    it('Lee la información del link', () => {
-        // expect(extentionFilePath(pathRelative)).toBe((pathAbsolute));
-        // expect(extractLinks(anchor)).toEqual(anchor['']);
-        expect(anchorEtqA(anchor)).toBe(anchor);
-        expect(anchorEtqA(linksInfo)).not.toBe(anchor);
+//Testeando Axios:
+// Mock out all top level functions, such as get, put, delete and post:
+jest.mock('axios');
+
+describe('validateLinks', () => {
+    it('Debería retornar una promesa que resuelve a un array de objetos validados', () => {
+        const links = [
+        { href: 'https://linkExample1.com', text: 'Example 1', file: 'archivo.md' },
+        { href: 'https://linkExample2.com', text: 'Example 2', file: 'archivo.md' },
+        ];
+        // mock axios necesario para solicitudes HTTP
+        console.log("karen")
+        axios.get.mockResolvedValue({ status: 200, statusText: 'OK' });
+        return expect(validateLinks(links)).resolves.toEqual([
+          { href: 'https://linkExample1.com', text: 'Example 1', file: 'archivo.md', status: 200, statusText: 'OK' },
+          { href: 'https://linkExample2.com', text: 'Example 2', file: 'archivo.md', status: 200, statusText: 'OK' },
+        ]);
     });
-})
+    it('Debería manejar errores de solicitudes HTTP mostrando un statusText: Fail', () => {
+        const linksFail = [
+        { href: 'https://linkExample1.com', text: 'Example 1', file: 'archivo.md' },
+        { href: 'https://linkExample2.com', text: 'Example 2', file: 'archivo.md' },
+        ];
+        // mock axios necesario para solicitudes HTTP
+        axios.get.mockRejectedValue({ status: 404, statusText: 'Not found' });
+        return expect(validateLinks(linksFail)).resolves.toEqual([
+          { href: 'https://linkExample1.com', text: 'Example 1', file: 'archivo.md', status: 404, statusText: 'Not found' },
+          { href: 'https://linkExample2.com', text: 'Example 2', file: 'archivo.md', status: 404, statusText: 'Not found' },
+        ]);
+    });
+});
+
+// describe('validateLinks', () => {
+//     it('Debería validar correctamente los enlaces', async () => {
+//       const links = [
+//         { href: 'https://www.linkExample.com', text: 'Example 1', file: 'archivo.md' },
+//       ];
+  
+//       const result = await validateLinks(links);
+  
+//       // Verifica que la longitud del resultado sea igual a la longitud de los enlaces de entrada
+//       expect(result.length).toBe(links.length);
+  
+//       // Verifica que cada objeto de enlace tenga las propiedades de estado esperadas
+//       result.forEach((link) => {
+//         expect(link).toHaveProperty('status');
+//         expect(link).toHaveProperty('statusText');
+//       });
+//     });
+//     // Agrega más casos de prueba según sea necesario, por ejemplo, para manejar enlaces que devuelven errores
+//   });
+

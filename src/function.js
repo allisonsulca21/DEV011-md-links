@@ -3,113 +3,125 @@ const fs = require('fs');
 const path = require('path');
 const marked = require('marked');
 const { JSDOM } = require('jsdom');
-const  axios  = require('axios');
+const axios = require('axios');
 
+// --------------- Absolute Path --------------- 
+const isAbsolutePath = (routeUser) => path.isAbsolute(routeUser); //boolean
 
-const isAbsolutePath = (route) => path.isAbsolute(route); //boolean
-const convertAbsolute = (route) => (isAbsolutePath(route) ? route : path.resolve(route));
-const existingPath = (route) => {
-    return fs.existsSync(route);
-  };
-const extentionFilePath = (route) => path.extname(route); // 
+// --------------- If not Absolute Path: convert to --------------- 
+const convertAbsolute = (routeUser) => (isAbsolutePath(routeUser) ? routeUser : path.resolve(routeUser));
 
-const validateMdExtension = (route) => {
-    const validateExtentionFile = [".md", ".mkd", ".mdwn", ".mdown", ".mdtxt", ".mdtext", ".markdown", ".text"];
-    const fileExtention = extentionFilePath(route);
-
-    return validateExtentionFile.includes(fileExtention) ? true : 'Invalid File';
+// --------------- Path exists --------------- 
+const existingPath = (routeUser) => {
+  return fs.existsSync(routeUser);
 };
 
-const readFile = (route) => {
-  return new Promise ((resolve,reject) => {
-    fs.readFile(route, 'utf-8', (err, data) => {
-      if(err) reject('Hubo un error en la lectura del archivo.')
-        // const dom = new JSDOM((marked.parse(data)));
+// --------------- Validate MD Extension --------------- 
+const extentionFilePath = (routeUser) => path.extname(routeUser);
+
+const validateMdExtension = (routeUser) => {
+  const validateExtentionFile = [".md", ".mkd", ".mdwn", ".mdown", ".mdtxt", ".mdtext", ".markdown", ".text"];
+  const fileExtention = extentionFilePath(routeUser);
+
+  return validateExtentionFile.includes(fileExtention) ? true : 'File inválido';
+};
+
+// --------------- Reading File --------------- 
+const readFile = (routeUser) => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(routeUser, 'utf-8', (err, data) => {
+      if (err) reject('Hubo un error en la lectura del archivo.')
       const extractedLinks = extractLinks(data)
       resolve(extractedLinks)
-    //   console.log(extractedLinks, 'te encontré');
     })
   })
 }
 
+// --------------- Find Links ---------------
+const extractLinks = (data, routeUser) => {
+  // función para extraer enlaces
+  const html = marked.parse(data);
+  const dom = new JSDOM(html);
+  const anchorEtqA = dom.window.document.querySelectorAll("a")
+  objectsArr = []; //almacenamos los enlaces extraídos
+
+  anchorEtqA.forEach((anchor) => {
+    // itera sobre los elementos
+    objectsArr.push({
+      href: anchor.href,
+      text: anchor.textContent,
+      file: routeUser,
+    }) //agrega href del enlace al arreglo de objeto
+  })
+  //console.log(convertAbsolute('docs/03-milestone.md'));
+  return objectsArr; //devuelve el arreglo de enlaces
+}
+
+// --------------- Validar solo formato 'Link' ---------------
 const validateFormatLink = (data) => {
-    const regex = /^https?:\/\/\S+$/;;
-    const links = [];
-   
+  const regex = /^https?:\/\/\S+$/;
+  const links = [];
 
-    data.forEach((link) => {
-      if (regex.exec(link.href)  !== null) {
-            links.push(link);
-        } 
-    })
-    return links;
-}
-const extractLinks = (data) => {
-    objectsArr = []
-    const html = marked.parse(data)
-    const dom = new JSDOM(html);
-    const anchorEtqA = dom.window.document.querySelectorAll("a")
-    console.log(anchorEtqA.length); 
-    anchorEtqA.forEach((anchor) => {
-       
-            objectsArr.push(
-                {
-                  href: anchor.href,
-                  text: anchor.textContent,
-                  file: '',
-                }
-              )
-        
-       
-    })
-    //console.log(convertAbsolute('docs/03-milestone.md'));
-    return objectsArr
+  data.forEach((link) => {
+    if (regex.exec(link.href) !== null) {
+      links.push(link);
+    }
+  })
+  return links;
 }
 
-// const validateLinks = (data) => {
-   
-//     const checkArray = data.map((i) => {
-//         const newObj = {...i};
-//         return axios.get(newObj.href)
-//           .then((res) => {
-//             newObj.status = res.status;
-//             newObj.statusText = res.statusText;
-//             return newObj; 
-//           })
-//           .catch((error) => {
-//                 newObj.status = !error.response ? 404 : error.response.status;
-//                 newObj.statusText = 'Fail';
-//                 return newObj;
-//           });
-//     });
-//     return Promise.all(checkArray);
-// }
-
+// --------------- Validate Links ---------------
 const validateLinks = (links) => {
-    const verifArray = links.map((i) => {
-      const newItem = {...i};
-      return axios.get(newItem.href)
-      .then((res) => {
-        newItem.status = res.status;
-        newItem.statusText = res.statusText;
-        return newItem;
+  const verifArray = links.map((file) => {
+    return axios
+      .get(file.href)
+      .then((result) => {
+        return {
+          ...file,
+          status: result.status,
+          statusText: result.statusText,
+        };
       })
       .catch((error) => {
-        newItem.status = !error.response ? 404 : error.response.status;
-        newItem.statusText = "error";
-        return newItem;
-        });
-    });
-    return Promise.all(verifArray);
-  }
+        return { 
+          ...file, 
+          status: error.status, 
+          statusText: error.statusText 
+        };
+      });
+  });
+  return Promise.all(verifArray);
+}
 
+// // --------------- Validate Links ---------------
+// const validateLinks = (links) => {
+//     const verifArray = links.map((file) => {
+//       const newItem = {...file};
+//       return axios.get(newItem.href)
+//       .then((res) => {
+//         newItem.status = res.status;
+//         newItem.statusText = res.statusText;
+//         return newItem;
+//       })
+//       .catch((error) => {
+//         newItem.status = !error.response ? 404 : error.response.status;
+//         newItem.statusText = "error";
+//         return newItem;
+//         });
+//     });
+//     return Promise.all(verifArray);
+// }
+
+
+// --------------- Modules exported ---------------
 module.exports = {
-    isAbsolutePath,
-    convertAbsolute,
-    existingPath,
-    extentionFilePath,
-    validateMdExtension,
-    readFile,
-    validateFormatLink,
-    validateLinks
+  isAbsolutePath,
+  convertAbsolute,
+  existingPath,
+  extentionFilePath,
+  validateMdExtension,
+  readFile,
+  validateFormatLink,
+  validateLinks,
+
 };
