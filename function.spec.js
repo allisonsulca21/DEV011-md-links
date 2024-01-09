@@ -53,7 +53,6 @@ describe('validateLinks', () => {
         { href: 'https://linkExample2.com', text: 'Example 2', file: 'archivo.md' },
         ];
         // mock axios necesario para solicitudes HTTP
-        console.log("karen")
         axios.get.mockResolvedValue({ status: 200, statusText: 'OK' });
         return expect(validateLinks(links)).resolves.toEqual([
           { href: 'https://linkExample1.com', text: 'Example 1', file: 'archivo.md', status: 200, statusText: 'OK' },

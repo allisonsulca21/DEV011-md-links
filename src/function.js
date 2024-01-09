@@ -16,12 +16,12 @@ const existingPath = (routeUser) => {
   return fs.existsSync(routeUser);
 };
 
-// --------------- Validate MD Extension --------------- 
-const extentionFilePath = (routeUser) => path.extname(routeUser);
+// --------------- Get Extension File Path --------------- 
+const getExtensionFilePath = (routeUser) => path.extname(routeUser);
 
 const validateMdExtension = (routeUser) => {
   const validateExtentionFile = [".md", ".mkd", ".mdwn", ".mdown", ".mdtxt", ".mdtext", ".markdown", ".text"];
-  const fileExtention = extentionFilePath(routeUser);
+  const fileExtention = getExtensionFilePath(routeUser);
 
   return validateExtentionFile.includes(fileExtention) ? true : 'File inválido';
 };
@@ -30,98 +30,82 @@ const validateMdExtension = (routeUser) => {
 const readFile = (routeUser) => {
   return new Promise((resolve, reject) => {
     fs.readFile(routeUser, 'utf-8', (err, data) => {
-      if (err) reject('Hubo un error en la lectura del archivo.')
-      const extractedLinks = extractLinks(data)
-      resolve(extractedLinks)
-    })
-  })
-}
+      if (err) {
+        reject('Hubo un error en la lectura del archivo.')
+      } else {
+        const extractedLinks = extractLinks(data, routeUser);
+        if(extractedLinks.length == 0){
+          reject('En el archivo no se encontraron links')
+        } else {
+          resolve(extractedLinks);
+        }
+      }
+    });
+  });
+};
 
 // --------------- Find Links ---------------
-const extractLinks = (data, routeUser) => {
+const extractLinks = (data, ruta) => {
   // función para extraer enlaces
   const html = marked.parse(data);
   const dom = new JSDOM(html);
   const anchorEtqA = dom.window.document.querySelectorAll("a")
-  objectsArr = []; //almacenamos los enlaces extraídos
+  linksArray = []; //almacenamos los enlaces extraídos
 
   anchorEtqA.forEach((anchor) => {
     // itera sobre los elementos
-    objectsArr.push({
+    linksArray.push({
       href: anchor.href,
       text: anchor.textContent,
-      file: routeUser,
+      file: ruta,
     }) //agrega href del enlace al arreglo de objeto
   })
   //console.log(convertAbsolute('docs/03-milestone.md'));
-  return objectsArr; //devuelve el arreglo de enlaces
+  return linksArray; //devuelve el arreglo de enlaces
 }
 
 // --------------- Validar solo formato 'Link' ---------------
-const validateFormatLink = (data) => {
+
+const validateFormatLink = (data, ruta) => {
+  // console.log(ruta, 'ruta');
   const regex = /^https?:\/\/\S+$/;
   const links = [];
 
   data.forEach((link) => {
     if (regex.exec(link.href) !== null) {
-      links.push(link);
+      links.push({
+        href: link.href,
+        text: link.text,
+        file: ruta,
+      });
     }
   })
   return links;
 }
 
 // --------------- Validate Links ---------------
-const validateLinks = (links) => {
-  const verifArray = links.map((file) => {
-    return axios
-      .get(file.href)
-      .then((result) => {
-        return {
-          ...file,
-          status: result.status,
-          statusText: result.statusText,
-        };
+const validateLinks = (link) => {
+    return axios.head(link.href)
+      .then((response) => {
+        link.status = response.status;
+        link.ok = response.status >= 200 && response.status < 400 ? 'ok' : 'fail';
+        return link;
       })
-      .catch((error) => {
-        return { 
-          ...file, 
-          status: error.status, 
-          statusText: error.statusText 
-        };
-      });
+      .catch(() => {
+        link.status = 404;
+        link.ok = 'fail';
+        return link;
   });
-  return Promise.all(verifArray);
-}
-
-// // --------------- Validate Links ---------------
-// const validateLinks = (links) => {
-//     const verifArray = links.map((file) => {
-//       const newItem = {...file};
-//       return axios.get(newItem.href)
-//       .then((res) => {
-//         newItem.status = res.status;
-//         newItem.statusText = res.statusText;
-//         return newItem;
-//       })
-//       .catch((error) => {
-//         newItem.status = !error.response ? 404 : error.response.status;
-//         newItem.statusText = "error";
-//         return newItem;
-//         });
-//     });
-//     return Promise.all(verifArray);
-// }
-
+};
 
 // --------------- Modules exported ---------------
 module.exports = {
   isAbsolutePath,
   convertAbsolute,
   existingPath,
-  extentionFilePath,
+  getExtensionFilePath,
   validateMdExtension,
   readFile,
   validateFormatLink,
   validateLinks,
-
 };
