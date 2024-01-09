@@ -6,21 +6,24 @@ const { convertAbsolute,
   validateLinks, 
   validateFormatLink } = require("./function.js");
 
-
 function mdLinks(path, options) {
   return new Promise((resolve, reject) => {
-    const { validate = false, stats = false } = options;
+    const { validate, stats } = options || {};
+    // const { validate, stats } = options;
     // verificar si existe la ruta
     if (existingPath(path)) {
       //convertir a ruta absoluta
       const convertedPath = convertAbsolute(path);
+      console.log(convertedPath, '✔ La ruta fue convertida con éxito!');
       // validar si es un archivo md
+      //console.log(validateMdExtension(path), 'convertido');
       if(validateMdExtension(path) === true){
         readFile(convertedPath, path)
         .then((fileRed) => {
+          //console.log(fileRed, 'texto');
           // retorna un booleano
           const links = validateFormatLink(fileRed, path);
-          // console.log(links, 'path'); content (object)
+          //console.log(links); //content (object)
           // si se valida el formato
           if(validate) {
             // creamos un array de links para la validación
@@ -59,7 +62,7 @@ function mdLinks(path, options) {
         })
         .catch((err)=> reject(err))
       } else {
-        reject(new Error('La ruta no es válida'));
+        reject(new Error('La ruta no es un archivo Markdown'));
       }
       
     } else {

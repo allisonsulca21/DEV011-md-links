@@ -85,6 +85,7 @@ const validateFormatLink = (data, ruta) => {
 
 // --------------- Validate Links ---------------
 const validateLinks = (link) => {
+  // console.log(link, 'kikiri');
     return axios.head(link.href)
       .then((response) => {
         link.status = response.status;

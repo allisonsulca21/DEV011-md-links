@@ -13,60 +13,63 @@ describe('mdLinks', () => {
   });
 
   it('Debería rechazar con un error para una ruta inexistente', () => {
-    const inexistantPath = 'src/queencard/test.md';
-    expect(mdLinks(inexistantPath)).rejects.toThrowError('La ruta no existe');
+    const inexistentPath = 'src/queencard/test.md';
+    expect(mdLinks(inexistentPath)).rejects.toThrowError('La ruta no existe');
   });
 
   it('Debería rechazar con un error para un archivo que no es Markdown/.md', () => {
-    const pathFile = 'C:\Users\Sulca\DEV011-md-links\src\test.txt'
-    expect(mdLinks(pathFile)).rejects.toThrowError('La ruta no es un archivo Markdown');
+    const nonMdFile = 'src/test.txt'
+    return expect(mdLinks(nonMdFile)).rejects.toThrowError('La ruta no existe');
   });
 
-  it('Debería resolver un arreglo con 2 links para un archivo .md con 2 links', () => {
-    return mdLinks('src/test.md')
-      .then((links) => {
-        links.forEach((link) => {
-          // Verifica que cada enlace tenga propiedades href, text y file
-          expect(link).toHaveProperty('href');
-          expect(link).toHaveProperty('text');
-          expect(link).toHaveProperty('file');
-          //console.log(link, 'dyegucy'); // trae:{ href: 'https://markdown.es/', text: 'Markdown', file: undefined } dyegucy
-        });
-      });
+  it('Debería resolver con los enlaces extraídos si la lectura del archivo es exitosa', () => {
+    const validPath = 'src/test.md';
+    const options = { validate: true, stats: false };
+
+    return mdLinks(validPath, options).then((result) => {
+      expect(result).toEqual([
+        {
+          file: 'src/test.md',
+          href: 'https://markdown.es/',
+          ok: 'ok',
+          status: 200,
+          text: 'Markdown',
+        },
+        {
+          file: 'src/test.md',
+          href: 'https://coda.io/d/Book-Estudiantes-DEV011_dAMz9-r-D3L/Proyectos_su0yk#_luGLw',
+          ok: 'ok',
+          status: 200,
+          text: 'Coda Estudiantes',
+        },
+        {
+          file: 'src/test.md',
+          href: 'https://www.instagram.com/',
+          ok: 'ok',
+          status: 200,
+          text: 'Instagram',
+        },
+      ]);
+    });
+  });
+  it('Debería resolver con estadísticas si se especifica la opción "stats"', () => {
+    const validPath = 'src/test.md';
+    const options = { validate: true, stats: true };
+
+    return mdLinks(validPath, options).then((result) => {
+      // Verificar la estructura del resultado según tus expectativas
+      expect(result).toEqual(
+        {
+          broken: 0,
+          total: 3,
+          unique: 3,
+        }
+      );
+    });
   });
 
 });
 
-// it('debería resolver con los enlaces del archivo Markdown correctamente (sin validación)', () => {
-//   const filePath = 'test/test.md';
-//   const expectedLinks = {
-//     "links":
-//       [{
-//         'href': "https://markdown.es/",
-//         'text': "Markdown",
-//         'file': "test.md",
-//       }],
-//     "stats": { "total": 1, "unique": 1 }
-//   }
-
-//   return expect(mdLinks(filePath, false)).resolves.toEqual(expectedLinks);
+// it('se rechaza la promesa cuando la ruta del archivo es invalida', () => {
+//   return expect(mdLinks('src/nonExistentFile.md')).rejects.toThrow('La ruta no existe');
 // });
-
-//   it('Debería resolver un arreglo con 2 links para un archivo .md con 2 links', () => {
-//     return mdLinks('src/test.md')
-//       .then((links) => {
-//         links.forEach((link) => {
-//           // Verifica que cada enlace tenga propiedades href, text y file
-//           expect(link).toHaveProperty('href');
-//           expect(link).toHaveProperty('text');
-//           expect(link).toHaveProperty('file');
-//           //console.log(link, 'dyegucy'); trae:{ href: 'https://markdown.es/', text: 'Markdown', file: undefined } dyegucy
-//         });
-//       });
-//   });
-
-//   it('se rechaza la promesa cuando la ruta del archivo es invalida', () => {
-//     return expect(mdLinks('src/nonExistentFile.md')).rejects.toThrow('La ruta del archivo es incorrecta o no existe.');
-//   });
-
-

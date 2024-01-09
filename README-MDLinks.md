@@ -16,16 +16,38 @@ Dentro de `index.js` se encuentra la lógica principal del módulo `mdLinks`. Aq
 
 El archivo `function.js` alberga funciones auxiliares utilizadas por `mdLinks` para llevar a cabo diversas tareas, como verificar la existencia de una ruta, convertir rutas a absolutas, leer el contenido de un archivo, encontrar enlaces en el contenido y validar enlaces.
 
-# Instalación
+##  Guía de uso 
 
-Para instalar la dependencia de validación de enlaces Markdown, ejecuta el siguiente comando en tu terminal:
-
+* Para leer un archivo markdown y extraer sus enlaces 
 ```bash
-npm install md-links-allison
+./src/cli,js README3.md
 ```
 
-También puedes instalarlo directamente desde GitHub con este comando:
+* Para verificar el estado de cada uno de los links extraídos 
+```bash
+md-links README3.md --validate
+```
+
+Este comando muestra el estado de los enlaces encontrados en el archivo Markdown en la ruta especificada. 
+
+* Para obtener un estadistica del archivo analizado. 
 
 ```bash
-npm install 
+ md-links README3.md --stats
+```
+
+Este comando muestra incluyendo la cantidad total de enlaces encontrados y la cantidad de enlaces únicos presentes en el documento
+
+*  Para mostrar la estadísticas básicas y los enlaces rotos en un archivo Markdown
+
+```bash
+ md-links README3.md --validate --stats
+```
+
+# Instalación
+
+Puedes instalarlo directamente desde GitHub con el siguiente comando
+
+```bash
+  npm install allisonsulca21/md-links
 ```

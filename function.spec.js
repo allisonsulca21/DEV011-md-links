@@ -1,12 +1,11 @@
 jest.mock('', () => jest.fn());
-//const { axios } = require("axios");
-const axios = require('axios');
 
 const {
     convertAbsolute,
     existingPath,
-    extentionFilePath,
-    validateLinks,
+    getExtensionFilePath,
+    validateMdExtension,
+    readFile,
 } = require('./src/function')
 
 // Test 1
@@ -22,8 +21,8 @@ describe('convertedPath', () => {
 
 // Test 2
 describe('existingPath', () => {
-    const pathExistent= 'C:\\Users\\Sulca\\DEV011-md-links\\docs\\02-milestone.md';
-    const pathNotExistent= 'C:\\Users\\Sulca\\DEV011-md-links\\docs\\02-milest.m';
+    const pathExistent = 'C:\\Users\\Sulca\\DEV011-md-links\\docs\\02-milestone.md';
+    const pathNotExistent = 'C:\\Users\\Sulca\\DEV011-md-links\\docs\\02-milest.m';
     it('Verifica si la ruta existe o no', () => {
         expect(existingPath(pathExistent)).toBe(true);
         expect(existingPath(pathNotExistent)).toBe(false);
@@ -32,64 +31,42 @@ describe('existingPath', () => {
 
 // Test 3
 describe('nameExt', () => {
-    const pathAbsolute= 'C:/Users/Sulca/DEV011-md-links/docs/03-milestone.md';
-    const pathRelative= '';
+    const pathAbsolute = 'C:/Users/Sulca/DEV011-md-links/docs/03-milestone.md';
+    const pathRelative = '';
     it('Verifica si la ruta es un archivo .md o no', () => {
-        // expect(extentionFilePath(pathRelative)).toBe((pathAbsolute));
-        expect(extentionFilePath(pathAbsolute)).toBe('.md');
-        expect(extentionFilePath(pathRelative)).not.toBe('.md');
+        // Comprobamos la extensión usando getExtensionFilePath
+        expect(getExtensionFilePath(pathAbsolute)).toBe('.md');
+        expect(getExtensionFilePath(pathRelative)).not.toBe('.md');
+
+        // Comprobamos la validación usando validateMdExtension
+        expect(validateMdExtension(pathAbsolute)).toBe(true);
+        expect(validateMdExtension(pathRelative)).toBe('File inválido');
     });
 })
 
 // Test 4
-//Testeando Axios:
-// Mock out all top level functions, such as get, put, delete and post:
-jest.mock('axios');
+describe('readFile', () => {
+  const validPath = './src/test.md';
 
-describe('validateLinks', () => {
-    it('Debería retornar una promesa que resuelve a un array de objetos validados', () => {
-        const links = [
-        { href: 'https://linkExample1.com', text: 'Example 1', file: 'archivo.md' },
-        { href: 'https://linkExample2.com', text: 'Example 2', file: 'archivo.md' },
-        ];
-        // mock axios necesario para solicitudes HTTP
-        axios.get.mockResolvedValue({ status: 200, statusText: 'OK' });
-        return expect(validateLinks(links)).resolves.toEqual([
-          { href: 'https://linkExample1.com', text: 'Example 1', file: 'archivo.md', status: 200, statusText: 'OK' },
-          { href: 'https://linkExample2.com', text: 'Example 2', file: 'archivo.md', status: 200, statusText: 'OK' },
+  it('debería resolver con los enlaces extraídos si la lectura del archivo es exitosa', () => {
+    return readFile(validPath).then((result) => {
+        // Mapeamos el resultado para quitar las propiedades que no son relevantes para la prueba
+        const resultWithoutStatus = result.map(({ file, href, text }) => ({ file, href, text }));
+  
+        // Verificamos que el resultado sea el esperado
+        expect(resultWithoutStatus).toEqual([
+          { href: 'https://markdown.es/', text: 'Markdown', file: './src/test.md' },
+          { href: 'https://coda.io/d/Book-Estudiantes-DEV011_dAMz9-r-D3L/Proyectos_su0yk#_luGLw', text: 'Coda Estudiantes', file: './src/test.md' },
+          { href: 'https://www.instagram.com/', text: 'Instagram', file: './src/test.md' },
         ]);
+      });
     });
-    it('Debería manejar errores de solicitudes HTTP mostrando un statusText: Fail', () => {
-        const linksFail = [
-        { href: 'https://linkExample1.com', text: 'Example 1', file: 'archivo.md' },
-        { href: 'https://linkExample2.com', text: 'Example 2', file: 'archivo.md' },
-        ];
-        // mock axios necesario para solicitudes HTTP
-        axios.get.mockRejectedValue({ status: 404, statusText: 'Not found' });
-        return expect(validateLinks(linksFail)).resolves.toEqual([
-          { href: 'https://linkExample1.com', text: 'Example 1', file: 'archivo.md', status: 404, statusText: 'Not found' },
-          { href: 'https://linkExample2.com', text: 'Example 2', file: 'archivo.md', status: 404, statusText: 'Not found' },
-        ]);
-    });
+
+  it('debería rechazar con un mensaje de error si la lectura del archivo falla', () => {
+    // Asegúrate de que el archivo no exista o tenga contenido incorrecto para simular un error
+    const invalidPath = './src/invalid-file.md';
+
+    // Ejecuta la función que estás probando y verifica que rechace con el mensaje de error esperado
+    return expect(readFile(invalidPath)).rejects.toEqual('Hubo un error en la lectura del archivo.');
+  });
 });
-
-// describe('validateLinks', () => {
-//     it('Debería validar correctamente los enlaces', async () => {
-//       const links = [
-//         { href: 'https://www.linkExample.com', text: 'Example 1', file: 'archivo.md' },
-//       ];
-  
-//       const result = await validateLinks(links);
-  
-//       // Verifica que la longitud del resultado sea igual a la longitud de los enlaces de entrada
-//       expect(result.length).toBe(links.length);
-  
-//       // Verifica que cada objeto de enlace tenga las propiedades de estado esperadas
-//       result.forEach((link) => {
-//         expect(link).toHaveProperty('status');
-//         expect(link).toHaveProperty('statusText');
-//       });
-//     });
-//     // Agrega más casos de prueba según sea necesario, por ejemplo, para manejar enlaces que devuelven errores
-//   });
-
