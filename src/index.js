@@ -8,7 +8,7 @@ const { convertAbsolute,
 
 function mdLinks(path, options) {
   return new Promise((resolve, reject) => {
-    const { validate, stats } = options || {};
+    const { validate, stats } = options || {}; 
     // const { validate, stats } = options;
     // verificar si existe la ruta
     if (existingPath(path)) {
@@ -20,7 +20,7 @@ function mdLinks(path, options) {
       if(validateMdExtension(path) === true){
         readFile(convertedPath, path)
         .then((fileRed) => {
-          //console.log(fileRed, 'texto');
+          //console.log(fileRed);
           // retorna un booleano
           const links = validateFormatLink(fileRed, path);
           //console.log(links); //content (object)
@@ -39,7 +39,7 @@ function mdLinks(path, options) {
                   unique:uniqueLinks, 
                   broken: brokenLinks 
                 };
-                // console.log(statsResult, 'validate'); indica (-- validate --stats)
+                //console.log(statsResult, 'validate'); //indica (-- validate --stats)
                 resolve(statsResult);
               } else {
                 resolve(validatedLinks);
@@ -47,16 +47,16 @@ function mdLinks(path, options) {
             })
             .catch((err) => reject(err));
           } else {
-          // resolve(fileRed)
+          resolve(fileRed) //muetra los links
             if(stats) {
               const totalLinks = links.length; // to know total length of links (all)
               const uniqueLinks = new Set(links.map(link => link.href)).size; // New array with uniquelinks (set remove duplicated arrays), (...convert SetObject into an array to be lengthed)
-              const statsResult = { 
+              const statsResults = { 
                 total: totalLinks, 
                 unique: uniqueLinks 
               };
               // console.log(statsResult, 'linkssss'); indica la cantidad de links unicos y total (includes --stats)
-              resolve(statsResult);         
+              resolve(statsResults);         
             }
           } 
         })
